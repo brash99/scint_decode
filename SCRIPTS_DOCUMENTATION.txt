@@ -1,0 +1,104 @@
+How to analyse a run
+
+*Step 0*:
+Create/update the root file associated with run # RUN:
+  ./fbana RUN 14 NEVENTS
+where RUN is the run you whant to analyze, 14 identifies the ROC we are using,
+NEVENTS is the maximum number of events to decode from raw data.
+
+*WARNING*: if the raw data file is too big (too many events), it
+cannot be opened by the program which decode it into a root
+file. Apparently this is a limitation of CODA, there is no explicit
+size limit in the program. Unless you happen to know how to overcome
+this issue, there is nothing you can do with the raw data file: it
+cannot be opened, so it cannot be processed.
+
+*Step 1: Launch root*
+   root -l
+
+*Step 2: execute the init script*
+There are three ways to do this: 
+1) version 1 loads it and execute it:
+  .x init.C
+Pro: very basic command
+Con: the scripts are interpreted
+
+2) version 2 load a compiled version, then execute the init script:
+   .x init.C+
+Pro: execution of scripts should be faster than version 1
+Con: none really, assuming the file init_C.so exists and is up-to-date
+
+3) version 3, which is suggested on the first invocation if some script has 
+been edited to try and catch errors, will create init_C.so:
+   .L init.C++
+   .q
+The former command "compiles" the init script (which in turn takes care
+of #include'ing the other ones), and it is supposed to boost the run
+time speed. Be warned that such compilation is handled by root via its
+own "compiler" ACliC, as opposed to a real one as gcc, so mayhem, also
+in the form of criptic error messages, may arise.
+At this point, one could be tempted to run the init() command and
+procede to the next step.
+Wrong, sorry.
+YOU *MUST* EXIT ROOT VIA THE .q COMMAND, then launch the init script
+normally via either version 1 or 2.
+If you do not exit, the analysis scripts will not work, also in the
+case that the ACliC compilation has been successful, and the init()
+command has been manually called. Root is a lovely piece of software,
+isn't it? 
+NOTE: if after all that you still encounter issues, like for example
+script names not recognized, just delete the compiled file, and maybe
+just stick with the interpreted version of the scripts.
+
+*Step 3: readin the root file:*
+   read(RUN)
+
+*Step 4: analyze the run!*
+to use functionality of script, say, SCRIPT.C, just do
+   SCRIPT( arguments )
+that is, pass to SCRIPT the args it needs. Refer to the table below
+for the available scripts.
+
+Next steps: unless scripts are changed during the analysis session,
+there is no need to repeat step 2.  You can just read a new run and
+work on it.
+
+IF, on the other hand, SCRIPTS ARE CHANGED DURING THE ANALYSIS SESSION,
+step 2 *must* be done again.  And step 3 after that.
+
+HINT: you can use name autocompletion pressing TAB
+Note: in the table below, "opt:" means the following argument is optional 
+
+| command                        | functionality                                          |
+|--------------------------------+--------------------------------------------------------|
+| .x init.C                      | initializations. MUST RUN THIS FIRST!                  |
+| read(RUN)                      | reads the root file corresponding to run # RUN         |
+|                                |                                                        |
+| Avert(current, others          | plots <ADC> for vertical tracks                        |
+| , opt: mean_thresh)            | args current/other = ADC threshold on current/         |
+|                                | neighbours pixels respectively.                        |
+|                                |                                                        |
+|                                | It also outputs on the console, for each group of      |
+|                                | 16 pixels, the mean of the plotted <ADC>; this should  |
+|                                | help the evaluation of relative changes in HV, if any. |
+|                                | The optional argument mean_thres specifies the min     |
+|                                | value the <ADC> should have to be considered in the    |
+|                                | calculation of the mean of the group of 16 pixels.     |
+|                                |                                                        |
+| checkpixels(opt: cut)          | checks which pixels are not connected                  |
+|                                | (counts > cut, default = 4 sigma = 40)                 |
+|                                |                                                        |
+| verticalfit(pmt, pixel         | fits and display a vertical track cut for the          |
+| , neighbor pixels threshold    | given pmt and pixel (the first 2 parameters).          |
+| , opt: current pixel threshold | The cut is "ADC less than x" on neighbors, and         |
+| , opt: # of neighbors)         | "ADC > y && ADC < 300" on current pixel.               |
+|                                | X is the third parameter. Y is the fourth (optional).  |
+|                                | The number of neighbors can be specified in the last   |
+|                                | parameter, which is also optional.                     |
+|--------------------------------+--------------------------------------------------------|
+| includes.h                     | not really a script, contains common constants         |
+|                                | and header files needed by root. It is read by init.C  |
+|                                |                                                        |
+| ./dbbuilder                    | standalone program to build the mapping database.      |
+|                                | Refer to document sbs_databases.txt for details        |
+|                                |                                                        |

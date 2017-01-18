@@ -1,0 +1,31 @@
+Use this file to specify how things are connected.
+
+IMPORTANT NOTE: Every line whose first non-space character is *not* a
+number will be treated as a comment.
+
+So, to comment out a config, just prepend whatever non-numeric char
+you want, for example #, to each relevant line
+
+Legend of the data columns:
+ PMT  ADC  ADC  TDC  TDC  NINO
+ ID   SLOT CHAN SLOT CHAN ID
+==============================
+
+config of semimodule 1 @ August 8, 2016
+
+ 1 0  0 0  0  1
+ 2 0 16 0 16  2
+ 3 0 32 0 32  4
+ 4 0 48 0 48  5
+ 5 1  0 0 64  7
+ 6 3 32 0 80 13
+ 7 3 48 1  0  6
+ 8 1 48 1 16  3
+ 9 2  0 1 32 17
+10 2 16 1 48 19
+11 2 32 1 64  8
+12 2 48 1 80 11
+13 3  0 2  0 12
+14 3 16 2 16 14
+
+more configs, if any:

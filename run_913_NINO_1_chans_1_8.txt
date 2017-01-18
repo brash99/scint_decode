@@ -1,0 +1,1 @@
+# NINOID channel meanADC rmsADC inADCevents totADCevents ratio meanTDC rmsTDC
