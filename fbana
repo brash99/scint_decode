@@ -1,0 +1,14 @@
+#!/bin/sh
+NEV_PED=15000
+
+RUNNO=$1
+ROC=$2
+NEV=$3
+
+echo "Calculating pedestals on a limited number of events..."
+./fbanareal $RUNNO $ROC $NEV_PED 1
+
+echo "\n"
+
+echo "Applying them..."
+./fbanareal $RUNNO $ROC $NEV

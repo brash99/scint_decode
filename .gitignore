@@ -3,3 +3,5 @@ dumper
 fbanareal
 *.a
 *.d
+*.root
+ped*.dat
