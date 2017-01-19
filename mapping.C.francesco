@@ -57,35 +57,34 @@ void readdb(TString fname = dbname){
 Int_t aslot(Int_t pixel){
   Int_t slot = -1;
   if ( (pixel >= 0 && pixel <= 15) || 
-       (pixel >= 16 && pixel <= 31) || 
-       (pixel >= 32 && pixel <= 47) ||
-       (pixel >= 48 && pixel <= 63) ) slot = 0;
-  if ( (pixel >= 64 && pixel <= 79) ||
-       (pixel >= 112 && pixel <= 127) ) slot = 1;
-  if ( (pixel >= 128 && pixel <= 143) ||
-       (pixel >= 144 && pixel <= 159) ||
-       (pixel >= 160 && pixel <= 175) ||
-       (pixel >= 176 && pixel <= 191) ) slot = 2;
-  if ( (pixel >= 192 && pixel <= 207) ||
-       (pixel >= 208 && pixel <= 223) ) slot = 3;
+       (pixel >= 32 && pixel <= 47) || 
+       (pixel >= 64 && pixel <= 79) ||
+       (pixel >= 96 && pixel <= 111) ) slot = 0;
+  if ( (pixel >= 16 && pixel <= 31) ||
+       (pixel >= 128 && pixel <= 143) ) slot = 1;
+  if ( (pixel >= 48 && pixel <= 63) ||
+       (pixel >= 80 && pixel <= 95) ||
+       (pixel >= 112 && pixel <= 127) ||
+       (pixel >= 144 && pixel <= 159) ) slot = 2;
+  if ( (pixel >= 160 && pixel <= 223) ) slot = 3;
   return slot;
 }
 
 Int_t achan(Int_t pixel){
   Int_t chan = -1;
   if (pixel >= 0 && pixel <= 15) chan = pixel;
-  if (pixel >= 16 && pixel <= 31) chan = pixel;
-  if (pixel >= 32 && pixel <= 47) chan = pixel;
-  if (pixel >= 48 && pixel <= 63) chan = pixel;
-  if (pixel >= 64 && pixel <= 79) chan = pixel - 64;
-  if (pixel >= 80 && pixel <= 95) chan = pixel - 48;
+  if (pixel >= 16 && pixel <= 31) chan = pixel + 32;
+  if (pixel >= 32 && pixel <= 47) chan = pixel - 16;
+  if (pixel >= 48 && pixel <= 63) chan = pixel - 48;
+  if (pixel >= 64 && pixel <= 79) chan = pixel - 32;
+  if (pixel >= 80 && pixel <= 95) chan = pixel - 64;
   if (pixel >= 96 && pixel <= 111) chan = pixel - 48;
-  if (pixel >= 112 && pixel <= 127) chan = pixel - 64;
+  if (pixel >= 112 && pixel <= 127) chan = pixel - 80;
   if (pixel >= 128 && pixel <= 143) chan = pixel - 128;
-  if (pixel >= 144 && pixel <= 159) chan = pixel - 128;
+  if (pixel >= 144 && pixel <= 159) chan = pixel - 96;
   if (pixel >= 160 && pixel <= 175) chan = pixel - 128;
-  if (pixel >= 176 && pixel <= 191) chan = pixel - 128;
-  if (pixel >= 192 && pixel <= 207) chan = pixel - 192;
+  if (pixel >= 176 && pixel <= 191) chan = pixel - 176;
+  if (pixel >= 192 && pixel <= 207) chan = pixel - 144;
   if (pixel >= 208 && pixel <= 223) chan = pixel - 192;
   return chan;
 }
@@ -99,19 +98,21 @@ Int_t globalpixel(Int_t pmt, Int_t pixel){
 int aslotNINO(int NINOID){
   int value=-1;
   switch (NINOID){
-  case 1:
   case 2:
-  case 3: 
   case 4:
+  case 5: 
+  case 18:
     value=0; break;
-  case 5:
-  case 8:
+  case 3:
+  case 7:
     value=1; break;
-  case 9:
-  case 10:
+  case 8:
   case 11:
-  case 12:
+  case 17:
+  case 19:
     value=2; break;
+  case 6:
+  case 12:
   case 13:
   case 14:
     value=3; break;
@@ -125,21 +126,24 @@ int aslotNINO(int NINOID){
 int achanNINO(int NINOID){
   int value=-1;
   switch(NINOID){
-  case 1:
+  case 7:
+  case 12:
+  case 17:
+  case 18:
+    value=0; break;
   case 2:
-  case 3:
+  case 14:
+  case 19:
+    value=16; break;
   case 4:
+  case 8:
+  case 13:
+    value=32; break;
+  case 3:
   case 5:
   case 6:
-  case 7:
-  case 8:
-  case 9:
-  case 10:
   case 11:
-  case 12:
-  case 13:
-  case 14:
-    value=0; break;
+    value=48; break;
   default:
     cout<<" Unknown NINO ID"<<endl;
   }
@@ -152,21 +156,23 @@ int achanNINO(int NINOID){
 Int_t handmapping_adc_slot(Int_t pmt){
   switch (pmt){
   case 1:
-  case 2:
   case 3:
-  case 4:
+  case 5:
+  case 7:
     return 0;
     break;
-  case 5:
-  case 8:
+  case 2:
+  case 9:
     return 1;
     break;
-  case 9:
+  case 4:
+  case 6:
+  case 8:
   case 10:
-  case 11:
-  case 12:
     return 2;
     break;
+  case 11:
+  case 12:
   case 13:
   case 14:
     return 3;
@@ -181,25 +187,25 @@ Int_t handmapping_adc_chan(Int_t pmt, Int_t pixel){
   pixel--;
   switch(pmt){
   case 1:
-  case 5:
+  case 4:
   case 9:
-  case 13:
+  case 12:
     return pixel;
-    break;
-  case 2:
-  case 10:
-  case 14:
-    return 16+pixel;
     break;
   case 3:
   case 6:
+  case 14:
+    return 16+pixel;
+    break;
+  case 5:
+  case 8:
   case 11:
     return 32+pixel;
     break;
-  case 4:
+  case 2:
   case 7:
-  case 8:
-  case 12:
+  case 10:
+  case 13:
     return 48+pixel;
     break;
   default:
@@ -211,22 +217,22 @@ Int_t handmapping_adc_chan(Int_t pmt, Int_t pixel){
 Int_t handmapping_tdc_slot(Int_t pmt){
   switch (pmt){
   case 1:
-  case 2:
   case 3:
-  case 4:
   case 5:
-  case 6:
+  case 7:
+  case 9:
+  case 11:
     return 0;
     break;
-  case 7:
+  case 2:
+  case 4:
+  case 6:
   case 8:
-  case 9:
   case 10:
-  case 11:
-  case 12:
+  case 13:
     return 1;
     break;
-  case 13:
+  case 12:
   case 14:
     return 2;
     break;
@@ -240,29 +246,29 @@ Int_t handmapping_tdc_chan(Int_t pmt, Int_t pixel){
   pixel--;
   switch(pmt){
   case 1:
-  case 7:
+  case 12:
   case 13:
     return pixel;
     break;
   case 2:
-  case 8:
+  case 3:
   case 14:
     return 16+pixel;
     break;
-  case 3:
-  case 9:
+  case 4:
+  case 5:
     return 32+pixel;
     break;
-  case 4:
-  case 10:
+  case 6:
+  case 7:
     return 48+pixel;
     break;
-  case 5:
-  case 11:
+  case 8:
+  case 9:
     return 64+pixel;
     break;
-  case 6:
-  case 12:
+  case 10:
+  case 11:
     return 80+pixel;
   default:
     return -1;
