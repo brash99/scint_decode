@@ -22,6 +22,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+static const Int_t NPMT=14;
+static const Int_t NPIXEL=16;
+static const Int_t NBARS=NPMT*NPIXEL;
+
+#include "mapping.C"
+
 using namespace std;
 
 static const Int_t NUMADCSLOTS = 4;
@@ -30,8 +36,8 @@ static const Int_t NUMCHANA = 64;
 static const Int_t NUMCHANT = 96; // in the root file, we have 2*3 times this. read Fastbus_main1.C
 static const float adc_charge = 50*1e-15; // 50 fC, corresponding to an ADC chan
 static const float e = 1.6e-19; // C, electron charge
-static const Int_t xcanvas = 640; // width of canvases
-static const Int_t ycanvas = 640; // height of canvases
+static const Int_t xcanvas = 1200; // width of canvases
+static const Int_t ycanvas = 900; // height of canvases
 
 Int_t run; // run number. Used in the titles
 
@@ -60,7 +66,7 @@ Int_t tdcl[NUMTDCSLOTS][NUMCHANT];
 // definition of the branchs
 static const Int_t MAXPMTIDS = 1 + 400; // number of user ID's
 static const Int_t MAXPMTS = 1 + NUMADCSLOTS * NUMCHANA / 16; // max number of PMT's which can be read by DAQ
-static const Int_t NPIXELS = 1 + 16;
+static const Int_t NPIXELS = 1 + NPIXEL;
 
 Int_t map_nino_id[MAXPMTS];
 Int_t map_pmt_id[MAXPMTIDS]; // index = PMT "user ID"
@@ -121,7 +127,15 @@ void init(Int_t runno){
 // automatically; if values different than -1 is passed to
 // tdc_chan_start/slot, those values will be used instead. May be
 // useful during testing of ADC/TDC channels
-TCanvas *plot_adc(Int_t adc_slot, Int_t adc_chan_start, Int_t tdc_cut=100, Int_t tdc_slot = -1, Int_t tdc_chan_start = -1){
+TCanvas *plot_adc(Int_t pmt=1, Int_t tdc_cut=1000){
+	
+	Int_t adc_slot = handmapping_adc_slot(pmt);
+	Int_t adc_chan_start = handmapping_adc_chan(pmt,1);
+	Int_t tdc_slot = handmapping_tdc_slot(pmt);
+	Int_t tdc_chan_start = handmapping_tdc_chan(pmt,1);
+	Int_t pixel1 = handmapping_pmt_pixel1(pmt);
+	Int_t pixel2 = handmapping_pmt_pixel2(pmt);
+	
 	TString cut, draw, draw1, title;
 	title.Form("run_%d_ADC",run);
 	TCanvas *cADC= new TCanvas("cADC",title,xcanvas,ycanvas);
@@ -152,7 +166,8 @@ TCanvas *plot_adc(Int_t adc_slot, Int_t adc_chan_start, Int_t tdc_cut=100, Int_t
 	  //if (tdc_chan_start == -1) tdc_chan_start=calc_tdc_chan(adc_slot,i);
 	  //if (tdc_slot == -1) tdc_slot = calc_tdc_slot(adc_slot,i);
 
-	  Int_t itdc = tdc_chan_start + i-adc_chan_start;
+	  Int_t itdc = tdc_chan_start + currentpad-1;
+	  Int_t iadc = i;
 
 	  cout << "Doing plot " << currentpad << " / 16"<<endl;
 	  tmpentry.Form("htmpa%d", currentpad);
@@ -160,9 +175,10 @@ TCanvas *plot_adc(Int_t adc_slot, Int_t adc_chan_start, Int_t tdc_cut=100, Int_t
 	  tmpentry.Form("htmpb%d", currentpad);
 	  htmpb[currentpad - 1] = new TH1D(tmpentry,tmpentry,nbin,min,max);
 
-	  draw.Form("adcraw[%d][%d]>>htmp",adc_slot,i);
-	  draw1.Form("adcraw[%d][%d]>>htmp",adc_slot,i);
+	  draw.Form("adcraw[%d][%d]>>htmp",adc_slot,iadc);
+	  draw1.Form("adcraw[%d][%d]>>htmp",adc_slot,iadc);
 	  cut.Form("tdct[%d][%d]>%d",tdc_slot,itdc,tdc_cut);
+	  cout << "ADC Slot/Chan, TDC Slot,Chan = " << adc_slot << ":" << iadc << ":" << tdc_slot << ":" << itdc << endl;
 
 	  t->Draw(draw,"","goff");
 
@@ -185,26 +201,33 @@ TCanvas *plot_adc(Int_t adc_slot, Int_t adc_chan_start, Int_t tdc_cut=100, Int_t
 	cADC->Divide(4,4) ;
 
 	//plot histos
+	Int_t icount=0;
 	for (Int_t i=0; i<16; i++){
 
-	  cout<<"into loop 2, i = " << i << endl;
+	  if(i != pixel1-1 && i != pixel2-1) {
+	  	cout<<"into loop 2, i = " << i << endl;
 
-	  cADC->cd( i + 1 );
-	  gPad->SetLogy();
+	  	cADC->cd( icount + 1 );
+	  	gPad->SetLogy();
 
-	  //cADC->Update();
+	  	//cADC->Update();
 
-	  Int_t entries = htmpa[i]->GetEntries();
-	  float mean = htmpa[i]->GetMean(1);
-	  float RMS = htmpa[i]->GetRMS(1);
+	  	Int_t entries = htmpa[i]->GetEntries();
+	  	float mean = htmpa[i]->GetMean(1);
+	  	float RMS = htmpa[i]->GetRMS(1);
 
-	  cout << entries <<" "<< mean <<" "<< RMS <<endl;
+	  	cout << entries <<" "<< mean <<" "<< RMS <<endl;
 
-	  htmpa[i]->SetStats(0);
-	  // current->Modified();
+	  	htmpa[i]->SetStats(0);
+	  	// current->Modified();
 
-	  htmpa[i]->Draw();
-	  htmpb[i]->Draw("same");
+	  	htmpa[i]->Draw();
+	 	htmpb[i]->Draw("same");
+	  
+		icount++;
+	  }
+
+
 	};
 	
 	title.Form("run_%d_ADC_slot_%d_chan_%d_%d_tdc_cut_%d.png",
@@ -225,12 +248,20 @@ TCanvas *plot_adc(Int_t adc_slot, Int_t adc_chan_start, Int_t tdc_cut=100, Int_t
 // different than -1 is passed to adc_chan_start, that value will be used
 // instead. May be useful during testing of ADC/TDC channels
 // Analogously for adc_slot
-TCanvas *plot_tdc(Int_t tdc_slot, Int_t tdc_chan_start, Int_t adc_cut, Int_t adc_slot = -1, Int_t adc_chan_start = -1){
+TCanvas *plot_tdc(Int_t pmt=1, Int_t adc_cut=400){
+	
+        Int_t adc_slot = handmapping_adc_slot(pmt);
+	Int_t adc_chan_start = handmapping_adc_chan(pmt,1);
+	Int_t tdc_slot = handmapping_tdc_slot(pmt);
+	Int_t tdc_chan_start = handmapping_tdc_chan(pmt,1);
+	Int_t pixel1 = handmapping_pmt_pixel1(pmt);
+	Int_t pixel2 = handmapping_pmt_pixel2(pmt);
+	
 	TString cut, draw, draw1, title;
 	title.Form("run_%d_TDC",run);
 	TCanvas *cTDC= new TCanvas("cTDC",title,xcanvas,ycanvas);
-	Int_t nbin=100;
-	Int_t min=-100, max=1500;
+	Int_t nbin=400;
+	Int_t min=1300, max=1700;
 	TH1D *htmpa[16];//=new TH1D("htmpa","htmpa",nbin,min,max);
 	TH1D *htmpb[16];//=new TH1D("htmpb","htmpb",nbin,min,max);
 	TH1D *htmp = new TH1D("htmp","htmp",nbin,min,max);
@@ -250,7 +281,10 @@ TCanvas *plot_tdc(Int_t tdc_slot, Int_t tdc_chan_start, Int_t adc_cut, Int_t adc
 	// fill histos
 	for (Int_t i=tdc_chan_start; i<tdc_chan_start+16; i++){
 
-	  currentpad = i - adc_chan_start + 1;
+	  currentpad = i - tdc_chan_start + 1;
+
+	  Int_t itdc = i;
+	  Int_t iadc = adc_chan_start + currentpad-1;
 
 	  //if (adc_chan_start == -1) adc_chan_start = calc_adc_chan(tdc_slot,tdc_chan_start);
 	  //if (adc_slot == -1) adc_slot = calc_adc_slot(tdc_slot, tdc_chan_start);
@@ -260,9 +294,10 @@ TCanvas *plot_tdc(Int_t tdc_slot, Int_t tdc_chan_start, Int_t adc_cut, Int_t adc
 	  tmpentry.Form("htmpb%d", currentpad);
 	  htmpb[currentpad - 1] = new TH1D(tmpentry,tmpentry,nbin,min,max);
 
-	  draw.Form("tdct[%d][%d]>>htmp",tdc_slot,i);
-	  draw1.Form("tdct[%d][%d]>>htmp",tdc_slot,i);
-	  cut.Form("adcraw[%d][%d]>%d",adc_slot,i,adc_cut);
+	  draw.Form("tdct[%d][%d]>>htmp",tdc_slot,itdc);
+	  draw1.Form("tdct[%d][%d]>>htmp",tdc_slot,itdc);
+	  cut.Form("adcraw[%d][%d]>%d",adc_slot,iadc,adc_cut);
+	  cout << "ADC Slot/Chan, TDC Slot,Chan = " << adc_slot << ":" << iadc << ":" << tdc_slot << ":" << itdc << endl;
 
 	  t->Draw(draw,"","goff");
 
@@ -275,7 +310,7 @@ TCanvas *plot_tdc(Int_t tdc_slot, Int_t tdc_chan_start, Int_t adc_cut, Int_t adc
 	  htmpa[currentpad - 1]->SetLineColor(kBlue);
 	  htmpb[currentpad - 1]->SetLineColor(kRed);
 
-	  title.Form("Run %d TDC slot %d chan %d tdc > %d",run,tdc_slot, i, adc_cut);
+	  title.Form("Run %d TDC slot %d chan %d adc > %d",run,tdc_slot, i, adc_cut);
 	  htmpa[currentpad - 1]->SetTitle(title);
 	  htmpb[currentpad - 1]->SetTitle(title);
 	  
@@ -285,12 +320,14 @@ TCanvas *plot_tdc(Int_t tdc_slot, Int_t tdc_chan_start, Int_t adc_cut, Int_t adc
 	cTDC->Divide(4,4) ;
 
 	//plot histos
+	Int_t icount=0;
 	for (Int_t i=0; i<16; i++){
 
+	  if(i != pixel1-1 && i != pixel2-1) {
 	  cout<<"into loop 2, i = " << i << endl;
 
-	  cTDC->cd( i + 1 );
-	  gPad->SetLogy();
+	  cTDC->cd( icount + 1 );
+	  //gPad->SetLogy();
 
 	  //cADC->Update();
 
@@ -305,6 +342,9 @@ TCanvas *plot_tdc(Int_t tdc_slot, Int_t tdc_chan_start, Int_t adc_cut, Int_t adc
 
 	  htmpa[i]->Draw();
 	  htmpb[i]->Draw("same");
+
+	  icount++;
+	  }
 	};
 	
 	title.Form("run_%d_TDC_slot_%d_chan_%d_%d_adc_cut_%d.png",

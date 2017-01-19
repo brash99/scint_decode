@@ -167,6 +167,8 @@ Int_t handmapping_adc_slot(Int_t pmt){
   case 12:
     return 2;
     break;
+  case 6:
+  case 7:
   case 13:
   case 14:
     return 3;
@@ -268,4 +270,72 @@ Int_t handmapping_tdc_chan(Int_t pmt, Int_t pixel){
     return -1;
   }
 }
+// pmt (>=1,<=14) first disconnected PMT channel
+Int_t handmapping_pmt_pixel1(Int_t pmt){
+	switch(pmt){
+	case 1:
+	case 2:
+	case 5:
+	case 7:
+	case 9:
+		return 4;
+		break;
+	case 6:
+		return 3;
+		break;
+	case 3:
+		return 2;
+		break;
+	case 4:
+		return 1;
+		break;
+	case 8:
+	case 10:
+	case 11:
+	case 12:
+	case 14:
+		return 13;
+		break;
+	case 13:
+		return 5;
+		break;
+	default:
+		return -1;
+	}
+}
 //-------------------------
+// pmt (>=1,<=14) first disconnected PMT channel
+Int_t handmapping_pmt_pixel2(Int_t pmt){
+	switch(pmt){
+	case 1:
+		return 5;
+		break;
+	case 2:
+		return 8;
+		break;
+	case 3:
+		return 11;
+		break;
+	case 4:
+	case 6:
+		return 13;
+		break;
+	case 5:
+		return 14;
+		break;
+	case 7:
+	case 8:
+	case 9:
+	case 10:
+	case 11:
+	case 12:
+	case 13:
+	case 14:
+	case 15:
+	case 16:
+		return 16;
+		break;
+	default:
+		return -1;
+	}
+}
