@@ -175,8 +175,10 @@ TCanvas *plot_adc(Int_t pmt=1, Int_t tdc_cut=1000){
 	  tmpentry.Form("htmpb%d", currentpad);
 	  htmpb[currentpad - 1] = new TH1D(tmpentry,tmpentry,nbin,min,max);
 
-	  draw.Form("adcraw[%d][%d]>>htmp",adc_slot,iadc);
-	  draw1.Form("adcraw[%d][%d]>>htmp",adc_slot,iadc);
+	  //draw.Form("adcraw[%d][%d]>>htmp",adc_slot,iadc);
+	  //draw1.Form("adcraw[%d][%d]>>htmp",adc_slot,iadc);
+	  draw.Form("adc[%d][%d]>>htmp",adc_slot,iadc);
+	  draw1.Form("adc[%d][%d]>>htmp",adc_slot,iadc);
 	  cut.Form("tdct[%d][%d]>%d",tdc_slot,itdc,tdc_cut);
 	  cout << "ADC Slot/Chan, TDC Slot,Chan = " << adc_slot << ":" << iadc << ":" << tdc_slot << ":" << itdc << endl;
 
@@ -238,6 +240,126 @@ TCanvas *plot_adc(Int_t pmt=1, Int_t tdc_cut=1000){
 }
 
 //--------------------------------------------------------------------
+//                        ADC Ratio Plots
+//--------------------------------------------------------------------
+// useful during testing of ADC/TDC channels
+TCanvas *plot_ratio(Int_t pmt=1, Int_t tdc_cut=1000){
+	
+	Int_t adc_slot = handmapping_adc_slot(pmt);
+	Int_t adc_chan_start = handmapping_adc_chan(pmt,1);
+	Int_t tdc_slot = handmapping_tdc_slot(pmt);
+	Int_t tdc_chan_start = handmapping_tdc_chan(pmt,1);
+	Int_t pixel1 = handmapping_pmt_pixel1(pmt);
+	Int_t pixel2 = handmapping_pmt_pixel2(pmt);
+	
+	TString cut, draw, draw1, title;
+	title.Form("run_%d_ADC",run);
+	TCanvas *cRATIO= new TCanvas("cRATIO",title,xcanvas,ycanvas);
+	Int_t nbin=100;
+	Int_t min=0, max=100;
+	TH1D *htmpa[16];//=new TH1D("htmp","htmp",nbin,min,max);
+	TH1D *htmpb[16];//=new TH1D("htmp1","htmp1",nbin,min,max);
+	TH1D *htmp = new TH1D("htmp","htmp",nbin,min,max);
+	//TPad *current=0;
+	//TPaveStats *ps = 0;
+	//TList *list = 0;
+	//TText *tconst = 0;
+	//TLatex *myt = 0;
+	TString tmpentry;
+	MyStyle->SetStatX(0.9);
+	MyStyle->SetStatY(0.6);
+	MyStyle->SetStatW(0.4);
+	//	last_tdc_cut = tdc_cut;
+
+	//	cRATIO->Divide(4,4) ;
+
+	// 16 channels to plot ( = 1 PMT)
+	// fill histos
+	for (Int_t i=adc_chan_start; i<adc_chan_start+16; i++){ 
+
+	  currentpad = i - adc_chan_start + 1;
+
+	  //if (tdc_chan_start == -1) tdc_chan_start=calc_tdc_chan(adc_slot,i);
+	  //if (tdc_slot == -1) tdc_slot = calc_tdc_slot(adc_slot,i);
+
+	  Int_t itdc = tdc_chan_start + currentpad-1;
+	  Int_t iadc = i;
+
+	  cout << "Doing plot " << currentpad << " / 16"<<endl;
+	  tmpentry.Form("htmpa%d", currentpad);
+	  htmpa[currentpad - 1] = new TH1D(tmpentry,tmpentry,nbin,min,max);
+	  tmpentry.Form("htmpb%d", currentpad);
+	  htmpb[currentpad - 1] = new TH1D(tmpentry,tmpentry,nbin,min,max);
+
+	  //draw.Form("adcraw[%d][%d]>>htmp",adc_slot,iadc);
+	  //draw1.Form("adcraw[%d][%d]>>htmp",adc_slot,iadc);
+	  draw.Form("adc[%d][%d]>>htmp",adc_slot,iadc);
+	  draw1.Form("adc[%d][%d]>>htmp",adc_slot,iadc);
+	  cut.Form("tdct[%d][%d]>%d",tdc_slot,itdc,tdc_cut);
+	  cout << "ADC Slot/Chan, TDC Slot,Chan = " << adc_slot << ":" << iadc << ":" << tdc_slot << ":" << itdc << endl;
+
+	  t->Draw(draw,"","goff");
+
+	  htmpa[currentpad - 1] = (TH1D*)htmp->Clone();
+
+	  t->Draw(draw1,cut,"goff");
+
+	  htmpb[currentpad - 1] = (TH1D*)htmp->Clone();
+	  htmpb[currentpad - 1]->Divide(htmpa[currentpad - 1]);
+
+	  htmpb[currentpad - 1]->SetLineColor(kBlue);
+
+	  title.Form("Run %d RATIO slot %d chan %d tdc > %d",run,adc_slot, i, tdc_cut);
+	  htmpb[currentpad - 1]->SetTitle(title);
+	  
+	}
+
+	cRATIO->Clear();
+	cRATIO->Divide(4,4) ;
+
+	//plot histos
+	Int_t icount=0;
+	TF1 *myfit = new TF1("myfit","1.0-0.5*erfc((x-[0])/[1])",0,1);
+	myfit->SetParName(0,"Mean");
+	myfit->SetParName(1,"Width");
+
+	for (Int_t i=0; i<16; i++){
+
+	  if(i != pixel1-1 && i != pixel2-1) {
+	  	cout<<"into loop 2, i = " << i << endl;
+
+	  	cRATIO->cd( icount + 1 );
+	  	//gPad->SetLogy();
+
+	  	//cRATIO->Update();
+
+	  	Int_t entries = htmpa[i]->GetEntries();
+	  	float mean = htmpa[i]->GetMean(1);
+	  	float RMS = htmpa[i]->GetRMS(1);
+
+	  	cout << entries <<" "<< mean <<" "<< RMS <<endl;
+
+	  	htmpb[i]->SetStats(0);
+	  	// current->Modified();
+
+	 	//htmpb[i]->Draw();
+		myfit->SetParameter(0,40.0);
+		myfit->SetParameter(1,10.0);
+		htmpb[i]->Fit("myfit");
+	  
+		icount++;
+	  }
+
+
+	};
+	
+	title.Form("run_%d_RATIO_slot_%d_chan_%d_%d_tdc_cut_%d.png",
+		   run,adc_slot,adc_chan_start,adc_chan_start+15,tdc_cut);
+	cRATIO->Print(title);
+	cRATIO->cd(0);
+	return cRATIO;
+}
+//--------------------------------------------------------------------
 //                        TDC only
 //--------------------------------------------------------------------
 // For interactive use:
@@ -296,7 +418,8 @@ TCanvas *plot_tdc(Int_t pmt=1, Int_t adc_cut=400){
 
 	  draw.Form("tdct[%d][%d]>>htmp",tdc_slot,itdc);
 	  draw1.Form("tdct[%d][%d]>>htmp",tdc_slot,itdc);
-	  cut.Form("adcraw[%d][%d]>%d",adc_slot,iadc,adc_cut);
+	  //cut.Form("adcraw[%d][%d]>%d",adc_slot,iadc,adc_cut);
+	  cut.Form("adc[%d][%d]>%d",adc_slot,iadc,adc_cut);
 	  cout << "ADC Slot/Chan, TDC Slot,Chan = " << adc_slot << ":" << iadc << ":" << tdc_slot << ":" << itdc << endl;
 
 	  t->Draw(draw,"","goff");
