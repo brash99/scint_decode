@@ -107,6 +107,11 @@ void init(Int_t runno){
   // read tree
   // TTree *t = (TTree *)_file0->Get("t"); 
   t = (TTree *)_file0->Get("t"); 
+  t->SetBranchAddress("adc",&adc);
+  t->SetBranchAddress("adcraw",&adcraw);
+  t->SetBranchAddress("tdct",&tdct);
+  t->SetBranchAddress("tdcl",&tdcl);
+
   Int_t nentries = t->GetEntries();
   cout << "Found " << nentries << " events"<<endl;
 
@@ -359,7 +364,85 @@ TCanvas *plot_ratio(Int_t pmt=1, Int_t tdc_cut=1000){
 	cRATIO->cd(0);
 	return cRATIO;
 }
+
 //--------------------------------------------------------------------
+//                        ADC Occupancy Plot
+//--------------------------------------------------------------------
+// useful during testing of ADC/TDC channels
+TCanvas *plot_occupancy(Int_t adc_cut=50, Int_t tdc_cut=1300){
+
+  	Int_t nentries = t->GetEntries();
+	TString cut, title;
+	title.Form("run_%d_Occupancy",run);
+	Int_t nbin=196;
+	Int_t min=1, max=196;
+	TH1D *hoccupancy = new TH1D("hoccupancy","hoccupancy",nbin,min,max);
+	TCanvas *cOCCUPANCY= new TCanvas("cOCCUPANCY",title,xcanvas,ycanvas);
+        
+	for (Int_t id=1;id<nentries;id++){
+	//for (Int_t id=1;id<100;id++){
+	t->GetEntry(id);
+
+	for (Int_t pmt=1; pmt<15; pmt++){
+	
+	Int_t adc_slot = handmapping_adc_slot(pmt);
+	Int_t adc_chan_start = handmapping_adc_chan(pmt,1);
+	Int_t tdc_slot = handmapping_tdc_slot(pmt);
+	Int_t tdc_chan_start = handmapping_tdc_chan(pmt,1);
+	Int_t pixel1 = handmapping_pmt_pixel1(pmt);
+	Int_t pixel2 = handmapping_pmt_pixel2(pmt);
+	
+	//TPad *current=0;
+	//TPaveStats *ps = 0;
+	//TList *list = 0;
+	//TText *tconst = 0;
+	//TLatex *myt = 0;
+	TString tmpentry;
+	MyStyle->SetStatX(0.9);
+	MyStyle->SetStatY(0.6);
+	MyStyle->SetStatW(0.4);
+	//	last_tdc_cut = tdc_cut;
+
+	//	cADC->Divide(4,4) ;
+
+	// 16 channels to plot ( = 1 PMT)
+	// fill histos
+	
+        Int_t currentpixel=0;
+	for (Int_t i=adc_chan_start; i<adc_chan_start+16; i++){ 
+
+	  currentpad = i - adc_chan_start + 1;
+	  if(currentpad != pixel1 && currentpad != pixel2) {						
+		currentpixel++;
+	  
+	  	Int_t paddle = (pmt-1)*14+currentpixel;
+
+	  	Int_t itdc = tdc_chan_start + currentpad-1;
+	  	Int_t iadc = i;
+
+	  	//cout << " PMT = " << pmt << " Pixel = " << currentpad << " ADC = " << adc[adc_slot][iadc] << " TDC = " << tdct[tdc_slot][itdc] <<endl;
+	  	if (tdct[tdc_slot][itdc] > tdc_cut && adc[adc_slot][iadc] > adc_cut) {
+			hoccupancy->Fill(paddle);
+	  	}
+	  }		
+	}
+	}
+	}
+
+	cOCCUPANCY->Clear();
+	cOCCUPANCY->Divide(1,1) ;
+
+	//plot histos
+	
+	title.Form("run_%d_OCCUPANCY_tdc_cut_%d.png",
+		   run,tdc_cut);
+	cOCCUPANCY->Print(title);
+	cOCCUPANCY->cd();
+	//hoccupancy->GetXaxis()->SetNdivisions(14);
+	//gPad->SetGridx();
+	hoccupancy->Draw();
+	return cOCCUPANCY;
+}
 //                        TDC only
 //--------------------------------------------------------------------
 // For interactive use:
@@ -382,8 +465,8 @@ TCanvas *plot_tdc(Int_t pmt=1, Int_t adc_cut=400){
 	TString cut, draw, draw1, title;
 	title.Form("run_%d_TDC",run);
 	TCanvas *cTDC= new TCanvas("cTDC",title,xcanvas,ycanvas);
-	Int_t nbin=400;
-	Int_t min=1300, max=1700;
+	Int_t nbin=4000;
+	Int_t min=0, max=4000;
 	TH1D *htmpa[16];//=new TH1D("htmpa","htmpa",nbin,min,max);
 	TH1D *htmpb[16];//=new TH1D("htmpb","htmpb",nbin,min,max);
 	TH1D *htmp = new TH1D("htmp","htmp",nbin,min,max);
