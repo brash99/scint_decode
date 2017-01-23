@@ -1,6 +1,4 @@
 *.o
-dumper
-fbanareal
 *.a
 *.d
 *.root
