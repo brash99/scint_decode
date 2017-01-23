@@ -18,10 +18,6 @@
 #define NUMADCSLOTS 4   // ADC # of slots. =4 for test crate, =4 ? for the other ones
 #define NUMTDCSLOTS 3   // TDC # of slots. =3 for test crate, =9 for the other ones
 
-#define NPMT 14
-#define NPIXEL 16
-#define NBARS NPMT*NPIXEL
-
 int quick;
 
 #include <iostream>

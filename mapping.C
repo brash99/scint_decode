@@ -17,6 +17,10 @@
 // 13  7 192..207  3 48    1  0   6
 // 14 14 208..223  3 16    2 16  14
 
+static const Int_t NPMT=14;
+static const Int_t NPIXEL=16;
+static const Int_t NBARS=NPMT*NPIXEL;
+
 Int_t baread[NBARS]; // ADC of bar as read from database
 Int_t ba[NBARS], bt[NBARS]; // ADC of bar corrected for gain, TDC of bar
 Double_t gainfactor[NBARS];

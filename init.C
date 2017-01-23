@@ -22,10 +22,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static const Int_t NPMT=14;
-static const Int_t NPIXEL=16;
-static const Int_t NBARS=NPMT*NPIXEL;
-
 #include "mapping.C"
 
 using namespace std;

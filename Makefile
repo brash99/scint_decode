@@ -57,7 +57,7 @@ ifeq ($(OSNAME),Linux)
      ROOTGLIBS     = $(shell root-config --glibs)
    endif
 
-   MODERNGPPVERSION := $(shell expr `g++ -dumpversion` \>= 4.4.8)
+   MODERNGPPVERSION := $(shell expr `g++ -dumpversion` \> 4.4.7)
 
    CXX           = g++
    ifneq ($(MODERNGPPVERSION),1)
@@ -71,8 +71,14 @@ ifeq ($(OSNAME),Linux)
 # Linux with egcs
    INCLUDES      = -I$(ROOTSYS)/include 
    CXX           = g++
-   CXXFLAGS      = -O -Wall  -fno-exceptions  -fPIC $(INCLUDES)
-   CXXFLAGS     += -Wno-deprecated -std=c++11
+   ifneq ($(MODERNGPPVERSION),1)
+   	CXXFLAGS      = -O -Wall  -fno-exceptions -std=c++0x -fPIC $(INCLUDES)
+   	CXXFLAGS     += -Wno-deprecated -std=c++11
+   else
+   	CXXFLAGS      = -O -Wall  -fno-exceptions -std=c++11 -fPIC $(INCLUDES)
+   	CXXFLAGS     += -Wno-deprecated -std=c++11
+   endif
+
    LD            = g++
    LDFLAGS       = 
    SOFLAGS       = -shared
