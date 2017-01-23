@@ -57,9 +57,16 @@ ifeq ($(OSNAME),Linux)
      ROOTGLIBS     = $(shell root-config --glibs)
    endif
 
+   MODERNGPPVERSION := $(shell expr `g++ -dumpversion` \>= 4.4.8)
+
    CXX           = g++
-   CXXFLAGS      = -Wall -fno-exceptions -fPIC  \
+   ifneq ($(MODERNGPPVERSION),1)
+   	CXXFLAGS      = -Wall -fno-exceptions -std=c++0x -fPIC  \
                    -DLINUXVERS -I$(ROOTSYS)/include -O
+   else
+   	CXXFLAGS      = -Wall -fno-exceptions -std=c++11 -fPIC  \
+                   -DLINUXVERS -I$(ROOTSYS)/include -O
+   endif
 
 # Linux with egcs
    INCLUDES      = -I$(ROOTSYS)/include 
