@@ -36,8 +36,8 @@ static const Int_t NUMCHANA = 64;
 static const Int_t NUMCHANT = 96; // in the root file, we have 2*3 times this. read Fastbus_main1.C
 static const float adc_charge = 50*1e-15; // 50 fC, corresponding to an ADC chan
 static const float e = 1.6e-19; // C, electron charge
-static const Int_t xcanvas = 1200; // width of canvases
-static const Int_t ycanvas = 900; // height of canvases
+static const Int_t xcanvas = 800; // width of canvases
+static const Int_t ycanvas = 800; // height of canvases
 
 Int_t run; // run number. Used in the titles
 
@@ -98,7 +98,7 @@ void init(Int_t runno){
   MyStyle->SetTitleFontSize(0.08);
   MyStyle->SetTitleX(0.15);
   MyStyle->SetTitleY(0.99);
-  MyStyle->SetStatW(0.4);
+  MyStyle->SetStatW(0.9);
   MyStyle->SetMarkerStyle(6);
   gStyle->SetCanvasDefH(xcanvas);
   gStyle->SetCanvasDefW(ycanvas);
@@ -132,7 +132,7 @@ void init(Int_t runno){
 // automatically; if values different than -1 is passed to
 // tdc_chan_start/slot, those values will be used instead. May be
 // useful during testing of ADC/TDC channels
-TCanvas *plot_adc(Int_t pmt=1, Int_t tdc_cut=1000){
+TCanvas *plot_adc(Int_t pmt=1, Int_t tdc_min=1350, Int_t tdc_width=200){
 	
 	Int_t adc_slot = handmapping_adc_slot(pmt);
 	Int_t adc_chan_start = handmapping_adc_chan(pmt,1);
@@ -184,7 +184,7 @@ TCanvas *plot_adc(Int_t pmt=1, Int_t tdc_cut=1000){
 	  //draw1.Form("adcraw[%d][%d]>>htmp",adc_slot,iadc);
 	  draw.Form("adc[%d][%d]>>htmp",adc_slot,iadc);
 	  draw1.Form("adc[%d][%d]>>htmp",adc_slot,iadc);
-	  cut.Form("tdct[%d][%d]>%d",tdc_slot,itdc,tdc_cut);
+	  cut.Form("tdct[%d][%d]>%d&&tdct[%d][%d]<%d",tdc_slot,itdc,tdc_min,tdc_slot,itdc,tdc_min+tdc_width);
 	  cout << "ADC Slot/Chan, TDC Slot,Chan = " << adc_slot << ":" << iadc << ":" << tdc_slot << ":" << itdc << endl;
 
 	  t->Draw(draw,"","goff");
@@ -198,7 +198,7 @@ TCanvas *plot_adc(Int_t pmt=1, Int_t tdc_cut=1000){
 	  htmpa[currentpad - 1]->SetLineColor(kBlue);
 	  htmpb[currentpad - 1]->SetLineColor(kRed);
 
-	  title.Form("Run %d ADC slot %d chan %d tdc > %d",run,adc_slot, i, tdc_cut);
+	  title.Form("Run %d ADC slot %d chan %d: %d < tdc < %d",run,adc_slot, i, tdc_min,tdc_min+tdc_width);
 	  htmpa[currentpad - 1]->SetTitle(title);
 	  htmpb[currentpad - 1]->SetTitle(title);
 	  
@@ -237,8 +237,8 @@ TCanvas *plot_adc(Int_t pmt=1, Int_t tdc_cut=1000){
 
 	};
 	
-	title.Form("run_%d_ADC_slot_%d_chan_%d_%d_tdc_cut_%d.png",
-		   run,adc_slot,adc_chan_start,adc_chan_start+15,tdc_cut);
+	title.Form("run_%d_ADC_slot_%d_chan_%d_%d_tdc_min_%d_max_%d.png",
+		   run,adc_slot,adc_chan_start,adc_chan_start+15,tdc_min,tdc_min+tdc_width);
 	cADC->Print(title);
 	cADC->cd(0);
 	return cADC;
@@ -248,7 +248,7 @@ TCanvas *plot_adc(Int_t pmt=1, Int_t tdc_cut=1000){
 //                        ADC Ratio Plots
 //--------------------------------------------------------------------
 // useful during testing of ADC/TDC channels
-TCanvas *plot_ratio(Int_t pmt=1, Int_t tdc_cut=1000){
+TCanvas *plot_ratio(Int_t pmt=1, Int_t tdc_min=1350, Int_t tdc_width=200){
 	
 	Int_t adc_slot = handmapping_adc_slot(pmt);
 	Int_t adc_chan_start = handmapping_adc_chan(pmt,1);
@@ -300,7 +300,7 @@ TCanvas *plot_ratio(Int_t pmt=1, Int_t tdc_cut=1000){
 	  //draw1.Form("adcraw[%d][%d]>>htmp",adc_slot,iadc);
 	  draw.Form("adc[%d][%d]>>htmp",adc_slot,iadc);
 	  draw1.Form("adc[%d][%d]>>htmp",adc_slot,iadc);
-	  cut.Form("tdct[%d][%d]>%d",tdc_slot,itdc,tdc_cut);
+	  cut.Form("tdct[%d][%d]>%d&&tdct[%d][%d]<%d",tdc_slot,itdc,tdc_min,tdc_slot,itdc,tdc_min+tdc_width);
 	  cout << "ADC Slot/Chan, TDC Slot,Chan = " << adc_slot << ":" << iadc << ":" << tdc_slot << ":" << itdc << endl;
 
 	  t->Draw(draw,"","goff");
@@ -314,7 +314,7 @@ TCanvas *plot_ratio(Int_t pmt=1, Int_t tdc_cut=1000){
 
 	  htmpb[currentpad - 1]->SetLineColor(kBlue);
 
-	  title.Form("Run %d RATIO slot %d chan %d tdc > %d",run,adc_slot, i, tdc_cut);
+	  title.Form("Run %d RATIO slot %d chan %d: %d < tdc < %d",run,adc_slot, i, tdc_min,tdc_min+tdc_width);
 	  htmpb[currentpad - 1]->SetTitle(title);
 	  
 	}
@@ -358,8 +358,8 @@ TCanvas *plot_ratio(Int_t pmt=1, Int_t tdc_cut=1000){
 
 	};
 	
-	title.Form("run_%d_RATIO_slot_%d_chan_%d_%d_tdc_cut_%d.png",
-		   run,adc_slot,adc_chan_start,adc_chan_start+15,tdc_cut);
+	title.Form("run_%d_RATIO_slot_%d_chan_%d_%d_tdc_min_%d_max_%d.png",
+		   run,adc_slot,adc_chan_start,adc_chan_start+15,tdc_min,tdc_min+tdc_width);
 	cRATIO->Print(title);
 	cRATIO->cd(0);
 	return cRATIO;
@@ -369,78 +369,81 @@ TCanvas *plot_ratio(Int_t pmt=1, Int_t tdc_cut=1000){
 //                        ADC Occupancy Plot
 //--------------------------------------------------------------------
 // useful during testing of ADC/TDC channels
-TCanvas *plot_occupancy(Int_t adc_cut=50, Int_t tdc_cut=1300){
+TCanvas *plot_occupancy(Int_t adc_cut=50, Int_t tdc_min=1350, Int_t tdc_width=200){
 
   	Int_t nentries = t->GetEntries();
 	TString cut, title;
 	title.Form("run_%d_Occupancy",run);
 	Int_t nbin=196;
-	Int_t min=1, max=196;
+	Int_t min=1, max=197;
+	Int_t nbinm=11;
+	Int_t minm=-1, maxm=10;
 	TH1D *hoccupancy = new TH1D("hoccupancy","hoccupancy",nbin,min,max);
+	TH1D *hmultiplicity = new TH1D("hmultiplicity","hmultiplicity",nbinm,minm,maxm);
 	TCanvas *cOCCUPANCY= new TCanvas("cOCCUPANCY",title,xcanvas,ycanvas);
         
 	for (Int_t id=1;id<nentries;id++){
 	//for (Int_t id=1;id<100;id++){
-	t->GetEntry(id);
+		t->GetEntry(id);
 
-	for (Int_t pmt=1; pmt<15; pmt++){
+		Int_t nmultiplicity=0;
+
+		for (Int_t pmt=1; pmt<15; pmt++){
 	
-	Int_t adc_slot = handmapping_adc_slot(pmt);
-	Int_t adc_chan_start = handmapping_adc_chan(pmt,1);
-	Int_t tdc_slot = handmapping_tdc_slot(pmt);
-	Int_t tdc_chan_start = handmapping_tdc_chan(pmt,1);
-	Int_t pixel1 = handmapping_pmt_pixel1(pmt);
-	Int_t pixel2 = handmapping_pmt_pixel2(pmt);
+			Int_t adc_slot = handmapping_adc_slot(pmt);
+			Int_t adc_chan_start = handmapping_adc_chan(pmt,1);
+			Int_t tdc_slot = handmapping_tdc_slot(pmt);
+			Int_t tdc_chan_start = handmapping_tdc_chan(pmt,1);
+			Int_t pixel1 = handmapping_pmt_pixel1(pmt);
+			Int_t pixel2 = handmapping_pmt_pixel2(pmt);
 	
-	//TPad *current=0;
-	//TPaveStats *ps = 0;
-	//TList *list = 0;
-	//TText *tconst = 0;
-	//TLatex *myt = 0;
-	TString tmpentry;
-	MyStyle->SetStatX(0.9);
-	MyStyle->SetStatY(0.6);
-	MyStyle->SetStatW(0.4);
-	//	last_tdc_cut = tdc_cut;
-
-	//	cADC->Divide(4,4) ;
-
-	// 16 channels to plot ( = 1 PMT)
-	// fill histos
+			TString tmpentry;
+			MyStyle->SetStatX(0.9);
+			MyStyle->SetStatY(0.9);
+			MyStyle->SetStatW(0.3);
+			// fill histos
 	
-        Int_t currentpixel=0;
-	for (Int_t i=adc_chan_start; i<adc_chan_start+16; i++){ 
+        		Int_t currentpixel=0;
+			for (Int_t i=adc_chan_start; i<adc_chan_start+16; i++){ 
 
-	  currentpad = i - adc_chan_start + 1;
-	  if(currentpad != pixel1 && currentpad != pixel2) {						
-		currentpixel++;
+	  			currentpad = i - adc_chan_start + 1;
+	  			if(currentpad != pixel1 && currentpad != pixel2) {						
+					currentpixel++;
 	  
-	  	Int_t paddle = (pmt-1)*14+currentpixel;
+	  				Int_t paddle = (pmt-1)*14+currentpixel;
 
-	  	Int_t itdc = tdc_chan_start + currentpad-1;
-	  	Int_t iadc = i;
+	  				Int_t itdc = tdc_chan_start + currentpad-1;
+	  				Int_t iadc = i;
 
-	  	//cout << " PMT = " << pmt << " Pixel = " << currentpad << " ADC = " << adc[adc_slot][iadc] << " TDC = " << tdct[tdc_slot][itdc] <<endl;
-	  	if (tdct[tdc_slot][itdc] > tdc_cut && adc[adc_slot][iadc] > adc_cut) {
-			hoccupancy->Fill(paddle);
-	  	}
-	  }		
-	}
-	}
+	  				//cout << " PMT = " << pmt << " Pixel = " << currentpad << " ADC = " << adc[adc_slot][iadc] << " TDC = " << tdct[tdc_slot][itdc] <<endl;
+	  				if (tdct[tdc_slot][itdc] > tdc_min && tdct[tdc_slot][itdc] < tdc_min+tdc_width) {
+						nmultiplicity++;
+						if (adc[adc_slot][iadc] > adc_cut) {
+							hoccupancy->Fill(paddle);
+						}
+	  				}
+	  			}		
+			}
+		}
+		hmultiplicity->Fill(nmultiplicity);
 	}
 
 	cOCCUPANCY->Clear();
-	cOCCUPANCY->Divide(1,1) ;
+	cOCCUPANCY->Divide(1,2) ;
 
 	//plot histos
 	
-	title.Form("run_%d_OCCUPANCY_tdc_cut_%d.png",
-		   run,tdc_cut);
+	title.Form("run_%d_OCCUPANCY_tdc_min_%d_max_%d.png",
+		   run,tdc_min,tdc_min+tdc_width);
 	cOCCUPANCY->Print(title);
-	cOCCUPANCY->cd();
-	//hoccupancy->GetXaxis()->SetNdivisions(14);
-	//gPad->SetGridx();
+	cOCCUPANCY->cd(1);
 	hoccupancy->Draw();
+	hoccupancy->GetXaxis()->SetNdivisions(14,14,0,0);
+	hoccupancy->SetLineColor(kBlue);
+	gPad->SetGridx();
+	cOCCUPANCY->cd(2);
+	hmultiplicity->Draw();
+	hmultiplicity->SetLineColor(kBlue);
 	return cOCCUPANCY;
 }
 //                        TDC only
@@ -453,7 +456,7 @@ TCanvas *plot_occupancy(Int_t adc_cut=50, Int_t tdc_cut=1300){
 // different than -1 is passed to adc_chan_start, that value will be used
 // instead. May be useful during testing of ADC/TDC channels
 // Analogously for adc_slot
-TCanvas *plot_tdc(Int_t pmt=1, Int_t adc_cut=400){
+TCanvas *plot_tdc(Int_t pmt=1, Int_t adc_cut=400, Int_t tdc_min=1350, Int_t tdc_width=200){
 	
         Int_t adc_slot = handmapping_adc_slot(pmt);
 	Int_t adc_chan_start = handmapping_adc_chan(pmt,1);
@@ -465,8 +468,8 @@ TCanvas *plot_tdc(Int_t pmt=1, Int_t adc_cut=400){
 	TString cut, draw, draw1, title;
 	title.Form("run_%d_TDC",run);
 	TCanvas *cTDC= new TCanvas("cTDC",title,xcanvas,ycanvas);
-	Int_t nbin=4000;
-	Int_t min=0, max=4000;
+	Int_t nbin=tdc_width;
+	Int_t min=tdc_min, max=tdc_min+tdc_width;
 	TH1D *htmpa[16];//=new TH1D("htmpa","htmpa",nbin,min,max);
 	TH1D *htmpb[16];//=new TH1D("htmpb","htmpb",nbin,min,max);
 	TH1D *htmp = new TH1D("htmp","htmp",nbin,min,max);
