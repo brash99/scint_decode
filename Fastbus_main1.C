@@ -315,7 +315,7 @@ int main(int argc, char* argv[])
     if (coda->codaOpen(filename) != 0) {
       cout << "ERROR: Cannot open CODA data" << endl;
       goto end1;
-    }
+    } 
   } else {         // Online ET connection
     int mymode = 1;
     TString mycomputer("sbs1");
@@ -594,6 +594,9 @@ void decode (int* data, TTree *tree) {
         if (slot==slotindTDC[jj]) slotindex=jj;
       }
       if (slot_ndata > NUMCHANT) {
+	// multi-hit TDC's, but usually only a few channels fire ... so more words than this 
+	// almost certainly means that something is awry.
+	//
         printf("*** TDC bad evnum= %d,slot_ndata = %d, data[%d] = 0x%x = (dec)  \n",evnum,slot_ndata,j,data[j]);
         nbad_tdc[slotindex]++;
         return;

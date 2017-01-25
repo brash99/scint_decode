@@ -181,7 +181,7 @@ TCanvas *plot_adc(Int_t pmt=1, Int_t tdc_min=1350, Int_t tdc_width=200){
 	  draw.Form("adc[%d][%d]>>htmp",adc_slot,iadc);
 	  draw1.Form("adc[%d][%d]>>htmp",adc_slot,iadc);
 	  cut.Form("tdct[%d][%d]>%d&&tdct[%d][%d]<%d",tdc_slot,itdc,tdc_min,tdc_slot,itdc,tdc_min+tdc_width);
-	  cout << "ADC Slot/Chan, TDC Slot,Chan = " << adc_slot << ":" << iadc << ":" << tdc_slot << ":" << itdc << endl;
+	  cout << "ADC Slot/Chan, TDC Slot,Chan, TDC Min,Max = " << adc_slot << ":" << iadc << ":" << tdc_slot << ":" << itdc << ":" << tdc_min << ":" << tdc_min+tdc_width << "Cut: " << cut << endl;
 
 	  t->Draw(draw,"","goff");
 
@@ -320,7 +320,7 @@ TCanvas *plot_ratio(Int_t pmt=1, Int_t tdc_min=1350, Int_t tdc_width=200){
 
 	//plot histos
 	Int_t icount=0;
-	TF1 *myfit = new TF1("myfit","1.0-0.5*erfc((x-[0])/[1])",0,1);
+	TF1 *myfit = new TF1("myfit","1.0-0.5*ROOT::Math::erfc((x-[0])/[1])",0,1);
 	myfit->SetParName(0,"Mean");
 	myfit->SetParName(1,"Width");
 
@@ -406,7 +406,7 @@ TCanvas *plot_occupancy(Int_t adc_cut=50, Int_t tdc_min=1350, Int_t tdc_width=20
 	  			if(currentpad != pixel1 && currentpad != pixel2) {						
 					currentpixel++;
 	  
-	  				Int_t paddle = (pmt-1)*14+currentpixel;
+	  				Int_t paddle = (pmt-1)*14+(15-currentpixel);
 
 	  				Int_t itdc = tdc_chan_start + currentpad-1;
 	  				Int_t iadc = i;
