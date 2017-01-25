@@ -178,7 +178,7 @@ TCanvas *plot_adc(Int_t pmt=1, Int_t tdc_min=1300, Int_t tdc_width=200){
 	  Int_t itdc = tdc_chan_start + currentpad-1;
 	  Int_t iadc = i;
 
-	  htmpa[currentpad-1]->Fill(adc[adc_slot][itdc]);
+	  htmpa[currentpad-1]->Fill(adc[adc_slot][iadc]);
           if(tdcl[tdc_slot][itdc]>tdc_min&&tdcl[tdc_slot][itdc]<tdc_min+tdc_width){
                 htmpb[currentpad-1]->Fill(adc[adc_slot][iadc]);
           }
