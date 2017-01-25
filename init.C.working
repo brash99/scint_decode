@@ -53,7 +53,6 @@ Int_t adc[NUMADCSLOTS][NUMCHANA];
 Int_t adcraw[NUMADCSLOTS][NUMCHANA];
 Int_t tdct[NUMTDCSLOTS][NUMCHANT];
 Int_t tdcl[NUMTDCSLOTS][NUMCHANT];
-Int_t tdcn[NUMTDCSLOTS][NUMCHANT];
 
 // NOTE: mapping is done in Fastbus_main1.C
 // The routine is copied here for reference and checks
@@ -108,7 +107,6 @@ void init(Int_t runno){
   t->SetBranchAddress("adcraw",&adcraw);
   t->SetBranchAddress("tdct",&tdct);
   t->SetBranchAddress("tdcl",&tdcl);
-  t->SetBranchAddress("tdcn",&tdcn);
 
   Int_t nentries = t->GetEntries();
   cout << "Found " << nentries << " events"<<endl;
@@ -142,48 +140,64 @@ TCanvas *plot_adc(Int_t pmt=1, Int_t tdc_min=1300, Int_t tdc_width=200){
 	TString cut, draw, draw1, title;
 	title.Form("run_%d_ADC",run);
 	TCanvas *cADC= new TCanvas("cADC",title,xcanvas,ycanvas);
-	
+	Int_t nbin=600;
+	Int_t min=-100, max=1000;
 	TH1D *htmpa[16];//=new TH1D("htmp","htmp",nbin,min,max);
 	TH1D *htmpb[16];//=new TH1D("htmp1","htmp1",nbin,min,max);
-	
+	TH1D *htmp = new TH1D("htmp","htmp",nbin,min,max);
+	//TPad *current=0;
+	//TPaveStats *ps = 0;
+	//TList *list = 0;
+	//TText *tconst = 0;
+	//TLatex *myt = 0;
 	TString tmpentry;
 	MyStyle->SetStatX(0.9);
 	MyStyle->SetStatY(0.6);
 	MyStyle->SetStatW(0.4);
+	//	last_tdc_cut = tdc_cut;
 
-        Int_t nbin=600;
-        Int_t min=-100, max=1000;
-        for(Int_t icounter=1;icounter<17;icounter++){
-                tmpentry.Form("htmpa%d", icounter);
-                htmpa[icounter - 1] = new TH1D(tmpentry,tmpentry,nbin,min,max);
-                tmpentry.Form("htmpb%d", icounter);
-                htmpb[icounter - 1] = new TH1D(tmpentry,tmpentry,nbin,min,max);
-                htmpa[icounter - 1]->SetLineColor(kBlue);
-                htmpb[icounter - 1]->SetLineColor(kRed);
-	  	title.Form("Run %d ADC slot %d chan %d: %d < tdc < %d",run,adc_slot, icounter, tdc_min,tdc_min+tdc_width);
-                htmpa[icounter - 1]->SetTitle(title);
-                htmpb[icounter - 1]->SetTitle(title);
-        }
+	//	cADC->Divide(4,4) ;
 
-        Int_t nentries=t->GetEntries();
-
-        for (Int_t id=10;id<nentries;id++){
-        t->GetEntry(id);
-	
-	 // fill histos
-	 for (Int_t i=adc_chan_start; i<adc_chan_start+16; i++){ 
+	// 16 channels to plot ( = 1 PMT)
+	// fill histos
+	for (Int_t i=adc_chan_start; i<adc_chan_start+16; i++){ 
 
 	  currentpad = i - adc_chan_start + 1;
+
+	  //if (tdc_chan_start == -1) tdc_chan_start=calc_tdc_chan(adc_slot,i);
+	  //if (tdc_slot == -1) tdc_slot = calc_tdc_slot(adc_slot,i);
 
 	  Int_t itdc = tdc_chan_start + currentpad-1;
 	  Int_t iadc = i;
 
-	  htmpa[currentpad-1]->Fill(adc[adc_slot][itdc]);
-          if(tdcl[tdc_slot][itdc]>tdc_min&&tdcl[tdc_slot][itdc]<tdc_min+tdc_width){
-                htmpb[currentpad-1]->Fill(adc[adc_slot][iadc]);
-          }
+	  cout << "Doing plot " << currentpad << " / 16"<<endl;
+	  tmpentry.Form("htmpa%d", currentpad);
+	  htmpa[currentpad - 1] = new TH1D(tmpentry,tmpentry,nbin,min,max);
+	  tmpentry.Form("htmpb%d", currentpad);
+	  htmpb[currentpad - 1] = new TH1D(tmpentry,tmpentry,nbin,min,max);
 
-	 }
+	  //draw.Form("adcraw[%d][%d]>>htmp",adc_slot,iadc);
+	  //draw1.Form("adcraw[%d][%d]>>htmp",adc_slot,iadc);
+	  draw.Form("adc[%d][%d]>>htmp",adc_slot,iadc);
+	  draw1.Form("adc[%d][%d]>>htmp",adc_slot,iadc);
+	  cut.Form("tdcl[%d][%d]>%d&&tdcl[%d][%d]<%d",tdc_slot,itdc,tdc_min,tdc_slot,itdc,tdc_min+tdc_width);
+	  cout << "ADC Slot/Chan, TDC Slot,Chan, TDC Min,Max = " << adc_slot << ":" << iadc << ":" << tdc_slot << ":" << itdc << ":" << tdc_min << ":" << tdc_min+tdc_width << "Cut: " << cut << endl;
+
+	  t->Draw(draw,"","goff");
+
+	  htmpa[currentpad - 1] = (TH1D*)htmp->Clone();
+
+	  t->Draw(draw1,cut,"goff");
+
+	  htmpb[currentpad - 1] = (TH1D*)htmp->Clone();
+
+	  htmpa[currentpad - 1]->SetLineColor(kBlue);
+	  htmpb[currentpad - 1]->SetLineColor(kRed);
+
+	  title.Form("Run %d ADC slot %d chan %d: %d < tdc < %d",run,adc_slot, i, tdc_min,tdc_min+tdc_width);
+	  htmpa[currentpad - 1]->SetTitle(title);
+	  htmpb[currentpad - 1]->SetTitle(title);
+	  
 	}
 
 	cADC->Clear();
@@ -242,53 +256,63 @@ TCanvas *plot_ratio(Int_t pmt=1, Int_t tdc_min=1300, Int_t tdc_width=200){
 	TString cut, draw, draw1, title;
 	title.Form("run_%d_ADC",run);
 	TCanvas *cRATIO= new TCanvas("cRATIO",title,xcanvas,ycanvas);
-	
+	Int_t nbin=25;
+	Int_t min=0, max=100;
 	TH1D *htmpa[16];//=new TH1D("htmp","htmp",nbin,min,max);
 	TH1D *htmpb[16];//=new TH1D("htmp1","htmp1",nbin,min,max);
-	TH1D *htmpc[16];//=new TH1D("htmp1","htmp1",nbin,min,max);
-	
+	TH1D *htmp = new TH1D("htmp","htmp",nbin,min,max);
+	//TPad *current=0;
+	//TPaveStats *ps = 0;
+	//TList *list = 0;
+	//TText *tconst = 0;
+	//TLatex *myt = 0;
 	TString tmpentry;
 	MyStyle->SetStatX(0.9);
 	MyStyle->SetStatY(0.6);
 	MyStyle->SetStatW(0.4);
+	//	last_tdc_cut = tdc_cut;
 
-        Int_t nbin=25;
-        Int_t min=0, max=100;
-        for(Int_t icounter=1;icounter<17;icounter++){
-                tmpentry.Form("htmpa%d", icounter);
-                htmpa[icounter - 1] = new TH1D(tmpentry,tmpentry,nbin,min,max);
-                tmpentry.Form("htmpb%d", icounter);
-                htmpb[icounter - 1] = new TH1D(tmpentry,tmpentry,nbin,min,max);
-                tmpentry.Form("htmpc%d", icounter);
-                htmpc[icounter - 1] = new TH1D(tmpentry,tmpentry,nbin,min,max);
-                htmpa[icounter - 1]->SetLineColor(kBlue);
-                htmpb[icounter - 1]->SetLineColor(kRed);
-                htmpc[icounter - 1]->SetLineColor(kRed);
-                title.Form("Run %d ADCRATIO slot %d chan %d: %d < tdc < %d",run,adc_slot, icounter, tdc_min,tdc_min+tdc_width);
-                htmpa[icounter - 1]->SetTitle(title);
-                htmpb[icounter - 1]->SetTitle(title); 
-                htmpc[icounter - 1]->SetTitle(title); 
-        }
+	//	cRATIO->Divide(4,4) ;
 
-        Int_t nentries=t->GetEntries();
-
-        for (Int_t id=10;id<nentries;id++){
-        t->GetEntry(id);
-	
-	 // fill histo 
-	 for (Int_t i=adc_chan_start; i<adc_chan_start+16; i++){ 
+	// 16 channels to plot ( = 1 PMT)
+	// fill histos
+	for (Int_t i=adc_chan_start; i<adc_chan_start+16; i++){ 
 
 	  currentpad = i - adc_chan_start + 1;
+
+	  //if (tdc_chan_start == -1) tdc_chan_start=calc_tdc_chan(adc_slot,i);
+	  //if (tdc_slot == -1) tdc_slot = calc_tdc_slot(adc_slot,i);
 
 	  Int_t itdc = tdc_chan_start + currentpad-1;
 	  Int_t iadc = i;
 
-          htmpa[currentpad-1]->Fill(adc[adc_slot][itdc]);
-          if(tdcl[tdc_slot][itdc]>tdc_min&&tdcl[tdc_slot][itdc]<tdc_min+tdc_width){
-                htmpb[currentpad-1]->Fill(adc[adc_slot][iadc]);
-          }
+	  cout << "Doing plot " << currentpad << " / 16"<<endl;
+	  tmpentry.Form("htmpa%d", currentpad);
+	  htmpa[currentpad - 1] = new TH1D(tmpentry,tmpentry,nbin,min,max);
+	  tmpentry.Form("htmpb%d", currentpad);
+	  htmpb[currentpad - 1] = new TH1D(tmpentry,tmpentry,nbin,min,max);
 
-	 }
+	  //draw.Form("adcraw[%d][%d]>>htmp",adc_slot,iadc);
+	  //draw1.Form("adcraw[%d][%d]>>htmp",adc_slot,iadc);
+	  draw.Form("adc[%d][%d]>>htmp",adc_slot,iadc);
+	  draw1.Form("adc[%d][%d]>>htmp",adc_slot,iadc);
+	  cut.Form("tdcl[%d][%d]>%d&&tdcl[%d][%d]<%d",tdc_slot,itdc,tdc_min,tdc_slot,itdc,tdc_min+tdc_width);
+	  cout << "ADC Slot/Chan, TDC Slot,Chan = " << adc_slot << ":" << iadc << ":" << tdc_slot << ":" << itdc << endl;
+
+	  t->Draw(draw,"","goff");
+
+	  htmpa[currentpad - 1] = (TH1D*)htmp->Clone();
+
+	  t->Draw(draw1,cut,"goff");
+
+	  htmpb[currentpad - 1] = (TH1D*)htmp->Clone();
+	  htmpb[currentpad - 1]->Divide(htmpa[currentpad - 1]);
+
+	  htmpb[currentpad - 1]->SetLineColor(kBlue);
+
+	  title.Form("Run %d RATIO slot %d chan %d: %d < tdc < %d",run,adc_slot, i, tdc_min,tdc_min+tdc_width);
+	  htmpb[currentpad - 1]->SetTitle(title);
+	  
 	}
 
 	cRATIO->Clear();
@@ -322,9 +346,7 @@ TCanvas *plot_ratio(Int_t pmt=1, Int_t tdc_min=1300, Int_t tdc_width=200){
 	 	//htmpb[i]->Draw();
 		myfit->SetParameter(0,40.0);
 		myfit->SetParameter(1,10.0);
-	  	htmpc[i] = (TH1D*)htmpb[i]->Clone();
-	  	htmpc[i]->Divide(htmpa[i]);
-		htmpc[i]->Fit("myfit");
+		htmpb[i]->Fit("myfit");
 	  
 		icount++;
 	  }
@@ -440,48 +462,59 @@ TCanvas *plot_tdc_hits(Int_t pmt=1, Int_t adc_cut=40){
 	TString cut, draw, draw1, title;
 	title.Form("run_%d_TDCHITS",run);
 	TCanvas *cTDCHITS= new TCanvas("cTDCHITS",title,xcanvas,ycanvas);
-	
+	Int_t nbin=11;
+	Int_t min=-1, max=10;
 	TH1D *htmpa[16];//=new TH1D("htmpa","htmpa",nbin,min,max);
 	TH1D *htmpb[16];//=new TH1D("htmpb","htmpb",nbin,min,max);
-	
+	TH1D *htmp = new TH1D("htmp","htmp",nbin,min,max);
 	TString tmpentry;
+	//TPad *current=0;
+	//TPaveStats *ps = 0;
+	//TPaveText *ps1;
+	//TList *list = 0;
+	//TText *tconst = 0;
+	//TLatex *myt = 0;
 	MyStyle->SetStatW(0.4);
 	MyStyle->SetStatX(0.6);
 	MyStyle->SetStatY(0.9);
-	
-        Int_t nbin=11;
-	Int_t min=-1, max=10;
-        for(Int_t icounter=1;icounter<17;icounter++){
-		tmpentry.Form("htmpa%d", icounter);
-		htmpa[icounter - 1] = new TH1D(tmpentry,tmpentry,nbin,min,max);
-		tmpentry.Form("htmpb%d", icounter);
-		htmpb[icounter - 1] = new TH1D(tmpentry,tmpentry,nbin,min,max);
-	  	htmpa[icounter - 1]->SetLineColor(kBlue);
-	  	htmpb[icounter - 1]->SetLineColor(kRed);
-	  	title.Form("Run %d TDC HITS slot %d chan %d adc > %d",run,tdc_slot, icounter, adc_cut);
-	  	htmpa[icounter - 1]->SetTitle(title);
-	  	htmpb[icounter - 1]->SetTitle(title);
-	}
 
-	Int_t nentries=t->GetEntries();
-
-	for (Int_t id=10;id<nentries;id++){
-	t->GetEntry(id);
-
-	 // fill histos
-	 for (Int_t i=tdc_chan_start; i<tdc_chan_start+16; i++){
+	// fill histos
+	for (Int_t i=tdc_chan_start; i<tdc_chan_start+16; i++){
 
 	  currentpad = i - tdc_chan_start + 1;
 
 	  Int_t itdc = i;
 	  Int_t iadc = adc_chan_start + currentpad-1;
 
-	  htmpa[currentpad-1]->Fill(tdcn[tdc_slot][itdc]);
-	  if(adc[adc_slot][iadc]>adc_cut){
-		htmpb[currentpad-1]->Fill(tdcn[tdc_slot][itdc]);
-	  }
+	  //if (adc_chan_start == -1) adc_chan_start = calc_adc_chan(tdc_slot,tdc_chan_start);
+	  //if (adc_slot == -1) adc_slot = calc_adc_slot(tdc_slot, tdc_chan_start);
+	  cout << "Doing plot " << currentpad << " / 16"<<endl;
+	  tmpentry.Form("htmpa%d", currentpad);
+	  htmpa[currentpad - 1] = new TH1D(tmpentry,tmpentry,nbin,min,max);
+	  tmpentry.Form("htmpb%d", currentpad);
+	  htmpb[currentpad - 1] = new TH1D(tmpentry,tmpentry,nbin,min,max);
+
+	  draw.Form("tdcn[%d][%d]>>htmp",tdc_slot,itdc);
+	  draw1.Form("tdcn[%d][%d]>>htmp",tdc_slot,itdc);
+	  //cut.Form("adcraw[%d][%d]>%d",adc_slot,iadc,adc_cut);
+	  cut.Form("adc[%d][%d]>%d",adc_slot,iadc,adc_cut);
+	  cout << "ADC Slot/Chan, TDC Slot,Chan = " << adc_slot << ":" << iadc << ":" << tdc_slot << ":" << itdc << endl;
+
+	  t->Draw(draw,"","goff");
+
+	  htmpa[currentpad - 1] = (TH1D*)htmp->Clone();
+
+	  t->Draw(draw1,cut,"goff");
+
+	  htmpb[currentpad - 1] = (TH1D*)htmp->Clone();
+
+	  htmpa[currentpad - 1]->SetLineColor(kBlue);
+	  htmpb[currentpad - 1]->SetLineColor(kRed);
+
+	  title.Form("Run %d TDC HITS slot %d chan %d adc > %d",run,tdc_slot, i, adc_cut);
+	  htmpa[currentpad - 1]->SetTitle(title);
+	  htmpb[currentpad - 1]->SetTitle(title);
 	  
-	 }
 	}
 
 	cTDCHITS->Clear();
@@ -546,49 +579,61 @@ TCanvas *plot_tdc(Int_t pmt=1, Int_t adc_cut=40, Int_t tdc_min=1300, Int_t tdc_w
 	TString cut, draw, draw1, title;
 	title.Form("run_%d_TDC",run);
 	TCanvas *cTDC= new TCanvas("cTDC",title,xcanvas,ycanvas);
-	
+	Int_t nbin=tdc_width;
+	Int_t min=tdc_min, max=tdc_min+tdc_width;
 	TH1D *htmpa[16];//=new TH1D("htmpa","htmpa",nbin,min,max);
 	TH1D *htmpb[16];//=new TH1D("htmpb","htmpb",nbin,min,max);
-	//TH1D *htmp = new TH1D("htmp","htmp",nbin,min,max);
-	
+	TH1D *htmp = new TH1D("htmp","htmp",nbin,min,max);
 	TString tmpentry;
+	//TPad *current=0;
+	//TPaveStats *ps = 0;
+	//TPaveText *ps1;
+	//TList *list = 0;
+	//TText *tconst = 0;
+	//TLatex *myt = 0;
 	MyStyle->SetStatW(0.4);
 	MyStyle->SetStatX(0.6);
 	MyStyle->SetStatY(0.6);
 
-        Int_t nbin=tdc_width;
-        Int_t min=tdc_min, max=tdc_min+tdc_width;
-        for(Int_t icounter=1;icounter<17;icounter++){
-                tmpentry.Form("htmpa%d", icounter);
-                htmpa[icounter - 1] = new TH1D(tmpentry,tmpentry,nbin,min,max);
-                tmpentry.Form("htmpb%d", icounter);
-                htmpb[icounter - 1] = new TH1D(tmpentry,tmpentry,nbin,min,max);
-                htmpa[icounter - 1]->SetLineColor(kBlue);
-                htmpb[icounter - 1]->SetLineColor(kRed);
-                title.Form("Run %d TDC slot %d chan %d adc > %d",run,tdc_slot, icounter, adc_cut);
-                htmpa[icounter - 1]->SetTitle(title);
-                htmpb[icounter - 1]->SetTitle(title);
-        }
 
-        Int_t nentries=t->GetEntries();
 
-        for (Int_t id=10;id<nentries;id++){
-        t->GetEntry(id);
-
-	 // fill histos
-	 for (Int_t i=tdc_chan_start; i<tdc_chan_start+16; i++){
+	// fill histos
+	for (Int_t i=tdc_chan_start; i<tdc_chan_start+16; i++){
 
 	  currentpad = i - tdc_chan_start + 1;
 
 	  Int_t itdc = i;
 	  Int_t iadc = adc_chan_start + currentpad-1;
 
-	  htmpa[currentpad-1]->Fill(tdcl[tdc_slot][itdc]);
-	  if(adc[adc_slot][iadc]>adc_cut){
-		htmpb[currentpad-1]->Fill(tdcl[tdc_slot][itdc]);
-	  }
+	  //if (adc_chan_start == -1) adc_chan_start = calc_adc_chan(tdc_slot,tdc_chan_start);
+	  //if (adc_slot == -1) adc_slot = calc_adc_slot(tdc_slot, tdc_chan_start);
+	  cout << "Doing plot " << currentpad << " / 16"<<endl;
+	  tmpentry.Form("htmpa%d", currentpad);
+	  htmpa[currentpad - 1] = new TH1D(tmpentry,tmpentry,nbin,min,max);
+	  tmpentry.Form("htmpb%d", currentpad);
+	  htmpb[currentpad - 1] = new TH1D(tmpentry,tmpentry,nbin,min,max);
+
+	  draw.Form("tdcl[%d][%d]>>htmp",tdc_slot,itdc);
+	  draw1.Form("tdcl[%d][%d]>>htmp",tdc_slot,itdc);
+	  //cut.Form("adcraw[%d][%d]>%d",adc_slot,iadc,adc_cut);
+	  cut.Form("adc[%d][%d]>%d",adc_slot,iadc,adc_cut);
+	  cout << "ADC Slot/Chan, TDC Slot,Chan = " << adc_slot << ":" << iadc << ":" << tdc_slot << ":" << itdc << endl;
+
+	  t->Draw(draw,"","goff");
+
+	  htmpa[currentpad - 1] = (TH1D*)htmp->Clone();
+
+	  t->Draw(draw1,cut,"goff");
+
+	  htmpb[currentpad - 1] = (TH1D*)htmp->Clone();
+
+	  htmpa[currentpad - 1]->SetLineColor(kBlue);
+	  htmpb[currentpad - 1]->SetLineColor(kRed);
+
+	  title.Form("Run %d TDC slot %d chan %d adc > %d",run,tdc_slot, i, adc_cut);
+	  htmpa[currentpad - 1]->SetTitle(title);
+	  htmpb[currentpad - 1]->SetTitle(title);
 	  
-	 }
 	}
 
 	cTDC->Clear();
