@@ -365,7 +365,7 @@ void dump (int* data) {
 
     bool has_leading = false;
     bool has_trailing = false;
-    bool more_than_1 = false;
+    //bool more_than_1 = false;
 
     //numslothitsTDC[slotindex]=slot_ndata;
 
@@ -398,7 +398,7 @@ void dump (int* data) {
   	    has_leading = true;
   	  } else {
   	    // what?!? more than one leading edge?
-  	    more_than_1 = true;
+  	    //more_than_1 = true;
   	  }
   	}
   	if (edgetype == TRAILING_EDGE) {
@@ -407,7 +407,7 @@ void dump (int* data) {
   	    has_trailing = true;
   	  } else {
   	    // what?!? more than one trailing edge?
-  	    more_than_1 = true;
+  	    //more_than_1 = true;
   	  }
   	}
 

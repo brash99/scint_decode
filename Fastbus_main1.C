@@ -606,9 +606,16 @@ void decode (int* data, TTree *tree) {
 
     tree_tdc_slot = slotindex;
 
-    bool has_leading = false;
-    bool has_trailing = false;
-    bool more_than_1 = false;
+    bool has_leading[NUMTDCSLOTS][NUMCHANT];
+    bool has_trailing[NUMTDCSLOTS][NUMCHANT];
+    //bool more_than_1[NUMTDCSLOTS][NUMCHANT];
+    for (Int_t jcounter=0;jcounter<NUMTDCSLOTS;jcounter++){
+    	for (Int_t icounter=0;icounter<NUMCHANT;icounter++){
+		has_leading[jcounter][icounter]=false;
+		has_trailing[jcounter][icounter]=false;
+		//more_than_1[jcounter][icounter]=false;
+    	}
+    }
 
     numslothitsTDC[slotindex]=slot_ndata;
 
@@ -626,29 +633,29 @@ void decode (int* data, TTree *tree) {
 	// if (rdata >= tree_tdc_hits[tree_tdc_slot][tree_tdc_chan] && edgetype==TRAILING_EDGE) tree_tdc_hits[tree_tdc_slot][tree_tdc_chan] = rdata;
 	// if (rdata >= tree_tdc_le_hits[tree_tdc_slot][tree_tdc_chan] && edgetype==LEADING_EDGE) tree_tdc_le_hits[tree_tdc_slot][tree_tdc_chan] = rdata;
 
-	if (edgetype == LEADING_EDGE)
+	if (edgetype == LEADING_EDGE && !has_leading[slotindex][ichan]) // record first hit only
 	  tdcldat[slotindex][ichan] = rdata;
 
-	if (edgetype == TRAILING_EDGE)
+	if (edgetype == TRAILING_EDGE && !has_trailing[slotindex][ichan]) // record first hit only
 	  tdctdat[slotindex][ichan] = rdata;
 	
    	// check if event is good
   	if (edgetype == LEADING_EDGE) {
-  	  if (!has_leading) {
+  	  if (!has_leading[slotindex][ichan]) {
   	    // first leading edge encountered for this event
-  	    has_leading = true;
+  	    has_leading[slotindex][ichan] = true;
   	  } else {
   	    // what?!? more than one leading edge?
-  	    more_than_1 = true;
+  	    //more_than_1[slotindex][ichan] = true;
   	  }
   	}
   	if (edgetype == TRAILING_EDGE) {
-  	  if (!has_trailing) {
+  	  if (!has_trailing[slotindex][ichan]) {
   	    // first leading edge encountered for this event
-  	    has_trailing = true;
+  	    has_trailing[slotindex][ichan] = true;
   	  } else {
   	    // what?!? more than one trailing edge?
-  	    more_than_1 = true;
+  	    //more_than_1[slotindex][ichan] = true;
   	  }
   	}
 
